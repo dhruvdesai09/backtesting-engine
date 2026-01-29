@@ -12,6 +12,10 @@ public class DataFeed {
         this.historicalData = historicalData;
     }
 
+    public MarketSnapshot snapshot(){
+        return new MarketSnapshot(historicalData[currindex]);
+    }
+
     public boolean hasNext(){
         return currindex< historicalData.length-1;
     }
@@ -21,9 +25,5 @@ public class DataFeed {
             throw new IllegalStateException("Reached the end");
         }
         currindex++;
-    }
-
-    public MarketSnapshot snapshot(){
-        return new MarketSnapshot(historicalData[currindex]);
     }
 }
