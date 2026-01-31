@@ -5,7 +5,6 @@ public class SMAStrategy implements Strategy {
     private final RollingSMA shortSMA = new RollingSMA(20);
     private final RollingSMA longSMA  = new RollingSMA(50);
 
-    // -1 = unknown, 0 = flat, 1 = long
     private int previousSignal = -1;
 
     public Integer showIntent(MarketSnapshot snapshot) {
@@ -14,9 +13,8 @@ public class SMAStrategy implements Strategy {
         shortSMA.addPrice(price);
         longSMA.addPrice(price);
 
-        // Warm-up period
         if (!shortSMA.isReady() || !longSMA.isReady()) {
-            return null; // no intent
+            return null;
         }
 
         double shortAvg = shortSMA.getAverage();
@@ -24,12 +22,11 @@ public class SMAStrategy implements Strategy {
 
         int currentSignal = shortAvg > longAvg ? 1 : 0;
 
-        // Edge-triggered: emit intent only on change
         if (currentSignal != previousSignal) {
             previousSignal = currentSignal;
-            return currentSignal; // new intent
+            return currentSignal;
         }
 
-        return null; // no change
+        return null;
     }
 }
