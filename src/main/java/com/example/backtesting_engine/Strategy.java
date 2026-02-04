@@ -1,5 +1,5 @@
 package com.example.backtesting_engine;
 
 public interface Strategy {
-    public Integer showIntent(MarketSnapshot snapshot);
+    public Intent showIntent(MarketSnapshot snapshot);
 }

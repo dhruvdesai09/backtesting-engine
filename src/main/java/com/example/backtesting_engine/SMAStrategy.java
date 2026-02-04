@@ -5,9 +5,9 @@ public class SMAStrategy implements Strategy {
     private final RollingSMA shortSMA = new RollingSMA(20);
     private final RollingSMA longSMA  = new RollingSMA(50);
 
-    private int previousSignal = -1;
+    private Intent previousSignal = null;
 
-    public Integer showIntent(MarketSnapshot snapshot) {
+    public Intent showIntent(MarketSnapshot snapshot) {
         int price = snapshot.getPrice();
 
         shortSMA.addPrice(price);
@@ -20,7 +20,7 @@ public class SMAStrategy implements Strategy {
         double shortAvg = shortSMA.getAverage();
         double longAvg  = longSMA.getAverage();
 
-        int currentSignal = shortAvg > longAvg ? 1 : 0;
+        Intent currentSignal = shortAvg > longAvg ? Intent.LONG : Intent.FLAT;
 
         if (currentSignal != previousSignal) {
             previousSignal = currentSignal;
