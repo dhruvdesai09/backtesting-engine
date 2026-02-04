@@ -1,5 +1,7 @@
 package com.example.backtesting_engine;
 
+import java.util.ArrayList;
+
 public class Engine {
 
     private final DataFeed dataFeed;
@@ -7,6 +9,7 @@ public class Engine {
 
     private Intent currentPosition = null;
     private double entryPrice = 0.0;
+    private final ArrayList<Trade> trades = new ArrayList<>();
 
     public Engine(DataFeed dataFeed, Strategy strategy) {
         this.dataFeed = dataFeed;
@@ -43,13 +46,12 @@ public class Engine {
     private void enterLong(double price) {
         currentPosition = Intent.LONG;
         entryPrice = price;
-        System.out.println("ENTER LONG at " + price);
+
     }
 
     private void exitLong(double price) {
         currentPosition = Intent.FLAT;
-        double pnl = price - entryPrice;
+        trades.add(new Trade(Intent.LONG, entryPrice, price));
         entryPrice = 0.0;
-        System.out.println("EXIT LONG at " + price + " | PnL = " + pnl);
     }
 }
