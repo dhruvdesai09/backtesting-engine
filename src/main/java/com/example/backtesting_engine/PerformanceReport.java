@@ -13,38 +13,66 @@ public final class PerformanceReport {
     private final int tradeCount;
     private final double averagePnl;
     private final double winRate;
-    private final List<Double> cumPnl;
+    private final List<Double> cumulativePnl;
+    private final double maxDrawDown;
+    private final double profitFactor;
 
     public PerformanceReport(List<Trade> trades) {
 
-        double pnl = 0.0;
+        double total = 0.0;
         int count = 0;
-        int winner = 0;
+        int winners = 0;
+        double grossProfit = 0.0;
+        double grossLoss = 0.0;
 
-        List<Double> tempCumPnl = new ArrayList<>();
+        List<Double> tempCumulative = new ArrayList<>();
 
         for (Trade trade : trades) {
-            pnl += trade.getPnl();
-            tempCumPnl.add(pnl);
+            double tradePnl = trade.getPnl();
+            total += tradePnl;
+            tempCumulative.add(total);
             count++;
-            if (trade.getPnl() > 0) {
-                winner++;
+
+            if (tradePnl > 0) {
+                winners++;
+                grossProfit += tradePnl;
+            } else if (tradePnl < 0) {
+                grossLoss += Math.abs(tradePnl);
             }
         }
 
-        this.totalPnl = pnl;
+        this.totalPnl = total;
         this.tradeCount = count;
 
         if (count == 0) {
             this.averagePnl = 0.0;
             this.winRate = 0.0;
-        } else {
-            this.averagePnl = totalPnl / tradeCount;
-            this.winRate = (double) winner / tradeCount;
+            this.cumulativePnl = Collections.emptyList();
+            this.maxDrawDown = 0.0;
+            this.profitFactor = 0.0;
+            return;
         }
 
-        // freeze cumulative PnL to enforce immutability
-        this.cumPnl = Collections.unmodifiableList(tempCumPnl);
+        this.averagePnl = totalPnl / tradeCount;
+        this.winRate = (double) winners / tradeCount;
+        this.cumulativePnl = Collections.unmodifiableList(tempCumulative);
+
+        double peak = cumulativePnl.get(0);
+        double mdd = 0.0;
+
+        for (double value : cumulativePnl) {
+            if (value > peak) {
+                peak = value;
+            } else {
+                double drawdown = peak - value;
+                if (drawdown > mdd) {
+                    mdd = drawdown;
+                }
+            }
+        }
+
+        this.maxDrawDown = mdd;
+        this.profitFactor = grossLoss == 0.0 ? Double.POSITIVE_INFINITY : grossProfit / grossLoss;
     }
 
     @Override
@@ -54,7 +82,9 @@ public final class PerformanceReport {
                 ", tradeCount=" + tradeCount +
                 ", averagePnl=" + averagePnl +
                 ", winRate=" + winRate +
-                ", cumulativePnl=" + cumPnl +
+                ", maxDrawDown=" + maxDrawDown +
+                ", profitFactor=" + profitFactor +
+                ", cumulativePnl=" + cumulativePnl +
                 '}';
     }
 }
