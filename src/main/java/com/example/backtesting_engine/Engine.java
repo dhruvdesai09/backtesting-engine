@@ -1,15 +1,18 @@
 package com.example.backtesting_engine;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Engine {
 
     private final DataFeed dataFeed;
     private final Strategy strategy;
 
-    private Intent currentPosition = null;
+    private Intent currentPosition = Intent.FLAT;
+    private Intent pendingIntent = null;
+
     private double entryPrice = 0.0;
-    private final ArrayList<Trade> trades = new ArrayList<>();
+    private final List<Trade> trades = new ArrayList<>();
 
     public Engine(DataFeed dataFeed, Strategy strategy) {
         this.dataFeed = dataFeed;
@@ -22,36 +25,61 @@ public class Engine {
             MarketSnapshot snapshot = dataFeed.snapshot();
             double price = snapshot.getPrice();
 
+            if (pendingIntent != null) {
+                executePendingIntent(price);
+                pendingIntent = null;
+            }
+
             Intent intent = strategy.showIntent(snapshot);
 
             if (intent != null) {
-                handleIntent(intent, price);
+                handleIntent(intent);
             }
 
             dataFeed.forward();
         }
     }
 
-    private void handleIntent(Intent intent, double price) {
-
+    private void handleIntent(Intent intent) {
         if (intent == Intent.LONG && currentPosition == Intent.FLAT) {
-            enterLong(price);
+            pendingIntent = Intent.LONG;
+        } else if (intent == Intent.FLAT && currentPosition == Intent.LONG) {
+            pendingIntent = Intent.FLAT;
         }
-        else if (intent == Intent.FLAT && currentPosition == Intent.LONG) {
+    }
+
+    private void executePendingIntent(double price) {
+        if (pendingIntent == Intent.LONG) {
+            enterLong(price);
+        } else if (pendingIntent == Intent.FLAT) {
             exitLong(price);
         }
-
     }
 
     private void enterLong(double price) {
+        double executionPrice = applyTransactionCost(price, ExecutionType.ENTRY);
         currentPosition = Intent.LONG;
-        entryPrice = price;
-
+        entryPrice = executionPrice;
     }
 
     private void exitLong(double price) {
+        double executionPrice = applyTransactionCost(price, ExecutionType.EXIT);
         currentPosition = Intent.FLAT;
-        trades.add(new Trade(Intent.LONG, entryPrice, price));
+        trades.add(new Trade(Intent.LONG, entryPrice, executionPrice));
         entryPrice = 0.0;
+    }
+
+    private double applyTransactionCost(double price, ExecutionType type) {
+        double cost = 1.0;
+
+        if (type == ExecutionType.ENTRY) {
+            return price + cost;
+        } else {
+            return price - cost;
+        }
+    }
+
+    public List<Trade> getTrades() {
+        return trades;
     }
 }
